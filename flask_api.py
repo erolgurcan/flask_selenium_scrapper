@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    
+    cnt = 0
     print("app started")
     print(os.environ.get("GOOGLE_CHROME_BIN") )
     print( os.environ.get("CHROMEDRIVER_PATH"))
