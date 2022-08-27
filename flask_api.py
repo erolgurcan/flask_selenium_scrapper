@@ -25,10 +25,9 @@ def home():
     driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=chrome_options)
 
     driver.get("https://vmslsoccer.com/webapps/common/login?returnto=spappz_live/team_page%3Freg_year=2023%26id=861")
-
-    elem = driver.find_element(By.NAME,"user")
-    print("waiting")
+    print("loading page...")
     time.sleep(10)
+    elem = driver.find_element(By.NAME,"user")    
     print("done")
 
     elem.clear()
@@ -121,15 +120,72 @@ def home():
         cur.execute( " insert into standing_table ( standing, team_name, gp, won, draw, lost, gf, ga, gd, pts, league, league_season  ) \
         values (" + "'" + str(standing) + "'" + "," + "'" + str(team_name) + "'" + "," +  str(gp) + "," + str(w) + "," + str(d) + "," + str(l) + "," + str(gf) + "," + str(ga) + "," +  str(gd) + "," + str(pts) + "," + "'"  + str(league) +"'"  + "," + str(season) +')') 
         conn.commit()
+        
+        
+    scheduele_soup = soup.find_all( "table", attrs={ "class": "linebox smart_table" } )
+    scheduele_header = list()
+    cnt = 0
 
+    for i in scheduele_soup:
+        for j in i.findAll("tr"):
+            row_list = list()
+            for k in j.findAll("td"):
+                if cnt == 0:                
+
+                    scheduele_header.append(k.get_text())
+                    df_merge = pd.DataFrame( columns=scheduele_header ) 
+                else:
+                    row_list.append( k.get_text() )
+            cnt+=1
+            row_dict = dict( zip( scheduele_header, row_list ) )   
+            row_df = pd.DataFrame().from_dict( row_dict, orient='index' ).transpose()
+            df_merge = pd.concat([df_merge, row_df], sort= False)  
+
+    df_merge = df_merge.dropna()
+
+    for i in ["Home Team", "Visiting Team"]:
+        df_merge[i] = df_merge[i].apply(lambda x:  str(x).replace(" (NEW)" , "")  )
+
+    opponent_list = list(set(df_merge["Home Team"].to_list()))
+
+    cur.execute( "delete from  events  where league  = 'Vancouver Metro Soccer League' ")
+    conn.commit()
+
+    for i in range( 0, len(df_merge) ):
+        date = list()    
+        location = df_merge["Field"].iloc[i]    
+        if ( df_merge["Home Team"].iloc[i] == "Dinamo Anatolia" ):
+            opponent_name = df_merge["Visiting Team"].iloc[i]
+        if ( df_merge["Visiting Team"].iloc[i] == "Dinamo Anatolia" ):
+            opponent_name = df_merge["Home Team"].iloc[i]
+        
+        [ date.append(str(df_merge["Date"].iloc[i]).split(" ")[1].split("/")[j])  for j in [2,1,0] ]
+        hr =  int(str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[0])
+        min = str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[1]
+    
+        if (min.__contains__("PM")):
+            hr = hr +12
+            if hr == 24:
+                hr = 00
+        
+        min = min.replace("PM", "").replace("AM", "")
+        
+        date_str = str(date[0]) + "-" + str(date[2]) + "-" + str(date[1]) + " " + str(hr) + ":"+ str(min) + ":" + str(0)
+        season = 2022
+        league = "Vancouver Metro Soccer League"
+        cur.execute( " insert into events ( event_location ,  opponent_name, event_date, season, league, league_season  ) \
+        values (" + "'" + location + "'" + "," +  "'" + opponent_name +"'" + "," + "'" +  date_str + "'" + "," + "'" + str(2022) +"'" + "," + "'" + str(league)+ "'"  + "," + "'" + str(2022)  +"'"+ ")" ) 
+        conn.commit()
+
+
+    print("done")
     cur.close()
     conn.close()
+        
     cnt = cnt+1
     print(cnt)
     print("database updated...")
-    time.sleep(10)
-    
-    
+      
     return "Flask heroku app"
 
 if __name__ == "__main__":
