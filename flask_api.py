@@ -104,6 +104,8 @@ def home():
     cur.execute( " delete from standing_table where league  = 'Vancouver Metro Soccer League'")
     conn.commit()
 
+    print("earlier data deleted")
+
     for i in range(1, len(df_merge)):
         standing = i
         team_name = df_merge["Team"].iloc[i]
