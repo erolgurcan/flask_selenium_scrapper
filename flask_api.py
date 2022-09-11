@@ -55,12 +55,7 @@ def home():
     print("page loaded")
     driver.close()
     
-
-    return "Flask heroku app"
-
-@app.route('/import_data')
-def import_data():
-    
+        
     team_header = list()
     database = os.environ.get("DATABASE")
     user = os.environ.get("DB_USER")
@@ -70,6 +65,115 @@ def import_data():
 
     conn = psycopg2.connect(database=database, user = user, password = password, host = host, port = port)
     cur = conn.cursor()
+
+    for i in leage_soup:
+        if str(i).__contains__("League Standings"):
+            
+            table_head = i.find("tr", attrs={"class", "colhead"}).find_all("td")
+            for t in table_head:
+                team_header.append(t.get_text())      
+                df_merge = pd.DataFrame(columns=team_header)   
+                
+            for k in i.find("tbody").find("table").find("tbody").children:
+                if ( len(k) > 1 ): 
+                    row = list()
+                    ind = 0
+                    for k2 in k:
+                        if ind == 0:                        
+                            pass
+                        ind += 1
+                        row.append(k2.get_text().replace(" ", ""))
+                    row_dict = dict( zip( team_header, row ) )
+                    df_temp = pd.DataFrame.from_dict(row_dict, orient="index")
+                    df_temp = df_temp.transpose()                    
+                    df_merge = pd.concat([df_merge, df_temp], sort= False)  
+                    
+            division = i.find( "div", attrs={ "class": "titlebar" } )
+            division_num = division.get_text() 
+             
+    cur.execute( " delete from standing_table where league  = 'Vancouver Metro Soccer League'")
+    conn.commit()
+    
+    for i in range(1, len(df_merge)):
+        standing = i
+        team_name = df_merge["Team"].iloc[i].replace(" (NEW)", "")
+        gp = df_merge["GP"].iloc[i]
+        w = df_merge["W"].iloc[i]
+        d = df_merge["D"].iloc[i]
+        l = df_merge["L"].iloc[i]
+        gf = df_merge["GF"].iloc[i]
+        ga = df_merge["GA"].iloc[i]
+        gd = df_merge["GD"].iloc[i]
+        pts = df_merge["PTS"].iloc[i]
+        league = "Vancouver Metro Soccer League"
+        season = 2022
+        cur.execute( " insert into standing_table ( standing, team_name, gp, won, draw, lost, gf, ga, gd, pts, league, league_season  ) \
+        values (" + "'" + str(standing) + "'" + "," + "'" + str(team_name) + "'" + "," +  str(gp) + "," + str(w) + "," + str(d) + "," + str(l) + "," + str(gf) + "," + str(ga) + "," +  str(gd) + "," + str(pts) + "," + "'"  + str(league) +"'"  + "," + str(season) +')') 
+    
+    conn.commit()
+    print("importing scheduele...")
+    
+    scheduele_soup = soup.find_all( "table", attrs={ "class": "linebox smart_table" } )
+    scheduele_header = list()
+    cnt = 0
+    
+    for i in scheduele_soup:
+        for j in i.findAll("tr"):
+            row_list = list()
+            for k in j.findAll("td"):
+                if cnt == 0:                
+
+                    scheduele_header.append(k.get_text())
+                    df_merge = pd.DataFrame( columns=scheduele_header ) 
+                else:
+                    row_list.append( k.get_text() )
+            cnt+=1
+            row_dict = dict( zip( scheduele_header, row_list ) )   
+            row_df = pd.DataFrame().from_dict( row_dict, orient='index' ).transpose()
+            df_merge = pd.concat([df_merge, row_df], sort= False)
+    
+    
+    df_merge = df_merge.dropna()
+    
+    for i in ["Home Team", "Visiting Team"]:
+        df_merge[i] = df_merge[i].apply(lambda x:  str(x).replace(" (NEW)" , "")  ) 
+        
+    
+    opponent_list = list(set(df_merge["Home Team"].to_list()))
+    cur.execute( "delete from  events  where league  = 'Vancouver Metro Soccer League' ")
+    conn.commit()
+    
+    
+    for i in range( 0, len(df_merge) ):
+        date = list()    
+        location = df_merge["Field"].iloc[i]    
+        if ( df_merge["Home Team"].iloc[i] == "Dinamo Anatolia" ):
+            opponent_name = df_merge["Visiting Team"].iloc[i]
+            home = 'true'
+        if ( df_merge["Visiting Team"].iloc[i] == "Dinamo Anatolia" ):
+            opponent_name = df_merge["Home Team"].iloc[i]
+            home = 'false'
+        
+        [ date.append(str(df_merge["Date"].iloc[i]).split(" ")[1].split("/")[j])  for j in [2,1,0] ]
+        hr =  int(str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[0])
+        min = str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[1]
+    
+        if (min.__contains__("PM")):
+            hr = hr +12
+            if hr == 24:
+                hr = 00
+        
+        min = min.replace("PM", "").replace("AM", "")
+        
+        date_str = str(date[0]) + "-" + str(date[2]) + "-" + str(date[1]) + " " + str(hr) + ":"+ str(min) + ":" + str(0)
+        season = 2022
+        league = "Vancouver Metro Soccer League"
+        cur.execute( " insert into events ( event_location ,  opponent_name, event_date2, season, league, league_season , home ) \
+        values (" + "'" + location + "'" + "," +  "'" + opponent_name +"'" + "," + "'" +  date_str + "'" + "," + "'" + str(2022) +"'" + "," + "'" + str(league)+ "'"  + "," + "'" + str(2022) + "'" + ","  +  str(home) + ")" ) 
+        conn.commit()
+    print("done")
+    cur.close()
+    conn.close()
 
     return "Flask heroku app"
 
