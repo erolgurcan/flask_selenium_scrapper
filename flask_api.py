@@ -58,6 +58,22 @@ def home():
 
     return "Flask heroku app"
 
+@app.route('/import_data')
+def import_data():
+    
+    team_header = list()
+    database = os.environ.get("DATABASE")
+    user = os.environ.get("DB_USER")
+    password = os.environ.get("DB_PASSWORD")
+    host =  os.environ.get("HOST")
+    port = "5432"
+
+    conn = psycopg2.connect(database=database, user = user, password = password, host = host, port = port)
+    cur = conn.cursor()
+
+    return "Flask heroku app"
+
+
 if __name__ == "__main__":
     app.run()   
    
