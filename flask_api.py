@@ -45,7 +45,6 @@ def home():
     soup = BeautifulSoup(page)
     leage_soup = soup.find_all("div", attrs={"class": "inline" })
 
-    time.sleep(5)
 
     while leage_soup.__len__() == 0:    
         page = driver.page_source
@@ -67,6 +66,7 @@ def home():
 
     conn = psycopg2.connect(database=database, user = user, password = password, host = host, port = port)
     cur = conn.cursor()
+    print("Connected to database")
 
     for i in leage_soup:
         if str(i).__contains__("League Standings"):
@@ -92,9 +92,13 @@ def home():
                     
             division = i.find( "div", attrs={ "class": "titlebar" } )
             division_num = division.get_text() 
-             
+      
+    print("leage dataframe created")
+            
     cur.execute( " delete from standing_table where league  = 'Vancouver Metro Soccer League'")
     conn.commit()
+    
+    print("Writing to database...")
     
     for i in range(1, len(df_merge)):
         standing = i
@@ -112,7 +116,7 @@ def home():
         cur.execute( " insert into standing_table ( standing, team_name, gp, won, draw, lost, gf, ga, gd, pts, league, league_season  ) \
         values (" + "'" + str(standing) + "'" + "," + "'" + str(team_name) + "'" + "," +  str(gp) + "," + str(w) + "," + str(d) + "," + str(l) + "," + str(gf) + "," + str(ga) + "," +  str(gd) + "," + str(pts) + "," + "'"  + str(league) +"'"  + "," + str(season) +')') 
     
-    print(df_merge)
+    print("Writing to database completed")
     
     conn.commit()
     print("importing scheduele...")
@@ -139,6 +143,9 @@ def home():
     
     df_merge = df_merge.dropna()
     
+    print("scheduele dataframe created")
+    print(df_merge)
+    
     for i in ["Home Team", "Visiting Team"]:
         df_merge[i] = df_merge[i].apply(lambda x:  str(x).replace(" (NEW)" , "")  ) 
         
@@ -147,7 +154,7 @@ def home():
     cur.execute( "delete from  events  where league  = 'Vancouver Metro Soccer League' ")
     conn.commit()
     
-    print(df_merge)
+    print("Writing to database...")
     
     for i in range( 0, len(df_merge) ):
         date = list()    
