@@ -45,6 +45,8 @@ def home():
     soup = BeautifulSoup(page)
     leage_soup = soup.find_all("div", attrs={"class": "inline" })
 
+    time.sleep(5)
+
     while leage_soup.__len__() == 0:    
         page = driver.page_source
         soup = BeautifulSoup(page)
@@ -110,6 +112,8 @@ def home():
         cur.execute( " insert into standing_table ( standing, team_name, gp, won, draw, lost, gf, ga, gd, pts, league, league_season  ) \
         values (" + "'" + str(standing) + "'" + "," + "'" + str(team_name) + "'" + "," +  str(gp) + "," + str(w) + "," + str(d) + "," + str(l) + "," + str(gf) + "," + str(ga) + "," +  str(gd) + "," + str(pts) + "," + "'"  + str(league) +"'"  + "," + str(season) +')') 
     
+    print(df_merge)
+    
     conn.commit()
     print("importing scheduele...")
     
@@ -170,7 +174,7 @@ def home():
         league = "Vancouver Metro Soccer League"
         cur.execute( " insert into events ( event_location ,  opponent_name, event_date2, season, league, league_season , home ) \
         values (" + "'" + location + "'" + "," +  "'" + opponent_name +"'" + "," + "'" +  date_str + "'" + "," + "'" + str(2022) +"'" + "," + "'" + str(league)+ "'"  + "," + "'" + str(2022) + "'" + ","  +  str(home) + ")" ) 
-        conn.commit()
+    conn.commit()
     print("done")
     cur.close()
     conn.close()
