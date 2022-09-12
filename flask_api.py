@@ -166,18 +166,23 @@ def home():
             opponent_name = df_merge["Home Team"].iloc[i]
             home = 'false'
         
-        [ date.append(str(df_merge["Date"].iloc[i]).split(" ")[1].split("/")[j])  for j in [2,1,0] ]
-        hr =  int(str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[0])
-        min = str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[1]
-    
-        if (min.__contains__("PM")):
-            hr = hr +12
-            if hr == 24:
-                hr = 00
+        try:
+            [ date.append(str(df_merge["Date"].iloc[i]).split(" ")[1].split("/")[j])  for j in [2,1,0] ]
+            hr =  int(str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[0])
+            min = str(df_merge["Date"].iloc[i]).split(" ")[2].split(":")[1]
         
-        min = min.replace("PM", "").replace("AM", "")
+            if (min.__contains__("PM")):
+                hr = hr +12
+                if hr == 24:
+                    hr = 00
+            
+            min = min.replace("PM", "").replace("AM", "")
+            date_str = str(date[0]) + "-" + str(date[2]) + "-" + str(date[1]) + " " + str(hr) + ":"+ str(min) + ":" + str(0)
         
-        date_str = str(date[0]) + "-" + str(date[2]) + "-" + str(date[1]) + " " + str(hr) + ":"+ str(min) + ":" + str(0)
+        except:
+            date_str = ""
+        
+       
         season = 2022
         league = "Vancouver Metro Soccer League"
         cur.execute( " insert into events ( event_location ,  opponent_name, event_date2, season, league, league_season , home ) \
