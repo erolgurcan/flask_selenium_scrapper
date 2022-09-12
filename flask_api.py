@@ -147,6 +147,7 @@ def home():
     cur.execute( "delete from  events  where league  = 'Vancouver Metro Soccer League' ")
     conn.commit()
     
+    print(df_merge)
     
     for i in range( 0, len(df_merge) ):
         date = list()    
