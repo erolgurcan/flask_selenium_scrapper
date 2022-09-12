@@ -144,8 +144,9 @@ def home():
     df_merge = df_merge.dropna()
 
     df_merge["Check"]  = df_merge["Date"].apply( lambda x: True if x.isnumeric() else False )
-    df_merge = df_merge.drop( df_merge[ df_merge["Check"] == False ].index )
-
+    
+    #pandas drop row based on condition
+    df_merge  = df_merge[df_merge.Check != False]
         
     print("scheduele dataframe created")
     print(df_merge)
