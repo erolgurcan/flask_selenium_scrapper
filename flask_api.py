@@ -146,7 +146,7 @@ def home():
     df_merge["Check"]  = df_merge["Date"].apply( lambda x: True if x.isnumeric() else False )
     
     #pandas drop row based on condition
-    df_merge  = df_merge[df_merge.Check != False]
+    df_merge  = df_merge[df_merge.Check != True]
         
     print("scheduele dataframe created")
     print(df_merge)
